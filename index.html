@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DisasterLens India – Disaster Analysis & Resilience Platform</title>
+  <meta name="description" content="Explore state-wise disaster history across India with interactive charts, geographic heatmaps, resilience tips, and safety guidance." />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- Leaflet.js for India Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ========= LOADER ========= -->
+  <div id="loader" class="loader-overlay">
+    <div class="loader-content">
+      <div class="loader-ring"></div>
+      <div class="loader-ring loader-ring-2"></div>
+      <div class="loader-ring loader-ring-3"></div>
+      <p class="loader-text">Loading Disaster Data…</p>
+    </div>
+  </div>
+
+  <!-- ========= NAVBAR ========= -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-container">
+      <a href="#hero" class="nav-brand">
+        <span class="brand-icon">🛡️</span>
+        <span class="brand-name">DisasterLens <span class="brand-sub">India</span></span>
+      </a>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#hero" class="nav-link active" data-section="hero">Home</a></li>
+        <li><a href="#dashboard" class="nav-link" data-section="dashboard">Dashboard</a></li>
+        <li><a href="#analysis" class="nav-link" data-section="analysis">Analysis</a></li>
+        <li><a href="#map-section" class="nav-link" data-section="map-section">Map</a></li>
+        <li><a href="#tips-section" class="nav-link" data-section="tips-section">Safety Tips</a></li>
+        <li><a href="#awareness" class="nav-link" data-section="awareness">Awareness</a></li>
+        <li><a href="#emergency" class="nav-link" data-section="emergency">Emergency</a></li>
+      </ul>
+      <div class="nav-actions">
+        <button id="themeToggle" class="btn-icon" title="Toggle theme" aria-label="Toggle dark/light mode">
+          <span id="themeIcon">☀️</span>
+        </button>
+        <button class="hamburger" id="hamburger" aria-label="Menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ========= HERO ========= -->
+  <section class="hero" id="hero">
+    <div class="hero-particles" id="heroParticles"></div>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <div class="hero-badge animate-in">🇮🇳 India Disaster Intelligence Platform</div>
+      <h1 class="hero-title animate-in delay-1">
+        Understand.<br/>
+        <span class="gradient-text">Prepare.</span><br/>
+        Survive.
+      </h1>
+      <p class="hero-subtitle animate-in delay-2">
+        Explore state-wise disaster history across India with AI-powered analysis, interactive visualizations, and actionable resilience tips.
+      </p>
+
+      <!-- State selector + search -->
+      <div class="hero-controls animate-in delay-3">
+        <div class="search-wrapper">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="stateSearch" placeholder="Search state…" autocomplete="off" aria-label="Search state" />
+          <div id="searchDropdown" class="search-dropdown hidden"></div>
+        </div>
+        <select id="stateSelect" aria-label="Select a state">
+          <option value="">— Select a State —</option>
+        </select>
+        <button id="analyzeBtn" class="btn-primary" aria-label="Analyze selected state">
+          <span>Analyze</span>
+          <span class="btn-arrow">→</span>
+        </button>
+      </div>
+
+      <!-- Hero stats ticker -->
+      <div class="hero-stats animate-in delay-4">
+        <div class="stat-pill" id="stat-total">
+          <span class="stat-num">—</span>
+          <span class="stat-lbl">Total Records</span>
+        </div>
+        <div class="stat-pill" id="stat-states">
+          <span class="stat-num">—</span>
+          <span class="stat-lbl">States Covered</span>
+        </div>
+        <div class="stat-pill" id="stat-deaths">
+          <span class="stat-num">—</span>
+          <span class="stat-lbl">Total Deaths</span>
+        </div>
+        <div class="stat-pill" id="stat-affected">
+          <span class="stat-num">—</span>
+          <span class="stat-lbl">People Affected</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scroll indicator -->
+    <div class="scroll-indicator">
+      <div class="scroll-dot"></div>
+      <span>Scroll to explore</span>
+    </div>
+  </section>
+
+  <!-- ========= DASHBOARD ========= -->
+  <section class="section" id="dashboard">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">📊 Overview</div>
+        <h2 class="section-title">National Disaster Dashboard</h2>
+        <p class="section-desc">A comprehensive view of disaster patterns across India from 2001–2023</p>
+      </div>
+
+      <!-- KPI cards -->
+      <div class="kpi-grid" id="kpiGrid">
+        <!-- filled by JS -->
+      </div>
+
+      <!-- Top charts row -->
+      <div class="charts-row">
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <h3>Top 10 Most Affected States</h3>
+            <span class="chart-badge">by deaths</span>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="topStatesChart"></canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <h3>Disaster Type Distribution</h3>
+            <span class="chart-badge">nationwide</span>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="disasterTypeChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Timeline chart -->
+      <div class="chart-card full-width">
+        <div class="chart-card-header">
+          <h3>Year-wise Disaster Trend</h3>
+          <span class="chart-badge">2001–2023</span>
+        </div>
+        <div class="chart-wrapper chart-tall">
+          <canvas id="trendChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========= STATE ANALYSIS ========= -->
+  <section class="section section-alt" id="analysis">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">🔎 Deep Dive</div>
+        <h2 class="section-title">State-wise Analysis</h2>
+        <p class="section-desc">Select a state to see granular disaster breakdown and insights</p>
+      </div>
+
+      <!-- Inline state selector -->
+      <div class="inline-selector">
+        <select id="stateSelectInline" aria-label="Select state for analysis">
+          <option value="">— Choose a State —</option>
+        </select>
+        <button id="analyzeBtnInline" class="btn-primary">Analyze State</button>
+      </div>
+
+      <!-- Alert card (most common disaster) -->
+      <div id="alertCard" class="alert-card hidden">
+        <div class="alert-pulse"></div>
+        <div class="alert-icon" id="alertIcon">⚠️</div>
+        <div class="alert-body">
+          <div class="alert-label">Most Common Disaster</div>
+          <div class="alert-title" id="alertTitle">—</div>
+          <div class="alert-sub" id="alertSub">—</div>
+        </div>
+        <button id="downloadReport" class="btn-outline">⬇ Download Report</button>
+      </div>
+
+      <!-- Percentage cards -->
+      <div id="percentageCards" class="perc-cards hidden"></div>
+
+      <!-- Analysis charts -->
+      <div class="charts-row" id="analysisCharts">
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <h3 id="pieChartTitle">Disaster Distribution</h3>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="statePieChart"></canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <h3 id="barChartTitle">Occurrence by Type</h3>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="stateBarChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- State timeline -->
+      <div class="chart-card full-width" id="stateTimelineCard">
+        <div class="chart-card-header">
+          <h3 id="timelineTitle">Year-wise Deaths</h3>
+        </div>
+        <div class="chart-wrapper chart-tall">
+          <canvas id="stateTimelineChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Data table -->
+      <div class="table-card" id="dataTableCard">
+        <div class="table-header">
+          <h3 id="tableTitle">Disaster Records</h3>
+          <input type="text" id="tableSearch" placeholder="Filter records…" class="table-search" aria-label="Filter table" />
+        </div>
+        <div class="table-wrapper">
+          <table id="dataTable">
+            <thead>
+              <tr>
+                <th>Year</th>
+                <th>Disaster Type</th>
+                <th>Deaths</th>
+                <th>Affected</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========= MAP ========= -->
+  <section class="section" id="map-section">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">🗺️ Geographic View</div>
+        <h2 class="section-title">India Disaster Map</h2>
+        <p class="section-desc">Interactive map showing disaster frequency by state — hover to explore</p>
+      </div>
+
+      <div class="map-legend-row">
+        <div id="map" class="india-map"></div>
+        <div class="map-legend-panel">
+          <h4>Legend</h4>
+          <div class="legend-items" id="legendItems"></div>
+          <div class="map-info-box" id="mapInfoBox">
+            <p class="map-info-placeholder">👆 Click a state on the map to see details</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========= RESILIENCE TIPS ========= -->
+  <section class="section section-alt" id="tips-section">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">🛡️ Be Prepared</div>
+        <h2 class="section-title">Resilience & Safety Tips</h2>
+        <p class="section-desc">Analyze a state above to get tailored disaster preparedness guidance</p>
+      </div>
+
+      <div id="tipsContainer" class="tips-container">
+        <!-- Tips selector tabs -->
+        <div class="tips-tabs" id="tipsTabs"></div>
+        <div class="tips-content" id="tipsContent">
+          <div class="tips-placeholder">
+            <div class="placeholder-icon">🌍</div>
+            <p>Select a state and click <strong>Analyze</strong> to get personalized safety tips</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========= AWARENESS ========= -->
+  <section class="section" id="awareness">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">📢 Awareness</div>
+        <h2 class="section-title">Disaster Awareness Hub</h2>
+        <p class="section-desc">Stay informed — knowledge is your best survival tool</p>
+      </div>
+
+      <div class="awareness-grid">
+        <div class="awareness-card" data-disaster="Flood">
+          <div class="awareness-icon">🌊</div>
+          <h3>Floods</h3>
+          <p>Floods are the most common disaster in India, affecting millions annually across river plains and coastal areas.</p>
+          <div class="awareness-tag">Most Frequent</div>
+        </div>
+        <div class="awareness-card" data-disaster="Cyclone">
+          <div class="awareness-icon">🌀</div>
+          <h3>Cyclones</h3>
+          <p>India's coastline is highly vulnerable to cyclones, especially during Oct–Dec on the east coast and Jun–Sep on the west.</p>
+          <div class="awareness-tag">High Risk</div>
+        </div>
+        <div class="awareness-card" data-disaster="Earthquake">
+          <div class="awareness-icon">🌍</div>
+          <h3>Earthquakes</h3>
+          <p>Seismically active zones in Himalayas, NE India, and Gujarat face significant earthquake risk.</p>
+          <div class="awareness-tag">Seismic Zone</div>
+        </div>
+        <div class="awareness-card" data-disaster="Drought">
+          <div class="awareness-icon">☀️</div>
+          <h3>Droughts</h3>
+          <p>Recurring droughts devastate agriculture in central and western India, pushing millions into food insecurity.</p>
+          <div class="awareness-tag">Agricultural Risk</div>
+        </div>
+        <div class="awareness-card" data-disaster="Heatwave">
+          <div class="awareness-icon">🌡️</div>
+          <h3>Heatwaves</h3>
+          <p>Extreme heat events are intensifying due to climate change, with temperatures often exceeding 45°C in Northern India.</p>
+          <div class="awareness-tag">Climate Change</div>
+        </div>
+        <div class="awareness-card" data-disaster="Landslide">
+          <div class="awareness-icon">⛰️</div>
+          <h3>Landslides</h3>
+          <p>Mountainous states like Uttarakhand, Himachal, and NE India face landslide risk during monsoon season.</p>
+          <div class="awareness-tag">Monsoon Risk</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========= EMERGENCY CONTACTS ========= -->
+  <section class="section section-alt" id="emergency">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">🚨 Emergency</div>
+        <h2 class="section-title">Emergency Contacts</h2>
+        <p class="section-desc">Save these numbers — every second counts in a disaster</p>
+      </div>
+
+      <div class="emergency-grid">
+        <div class="emergency-card urgent">
+          <div class="emergency-num">112</div>
+          <div class="emergency-name">National Emergency</div>
+          <div class="emergency-desc">All emergencies — police, fire, ambulance</div>
+        </div>
+        <div class="emergency-card">
+          <div class="emergency-num">1078</div>
+          <div class="emergency-name">NDRF Helpline</div>
+          <div class="emergency-desc">National Disaster Response Force</div>
+        </div>
+        <div class="emergency-card">
+          <div class="emergency-num">1070</div>
+          <div class="emergency-name">Disaster Control Room</div>
+          <div class="emergency-desc">State Disaster Management Authority</div>
+        </div>
+        <div class="emergency-card">
+          <div class="emergency-num">101</div>
+          <div class="emergency-name">Fire Services</div>
+          <div class="emergency-desc">Fire & rescue emergencies</div>
+        </div>
+        <div class="emergency-card">
+          <div class="emergency-num">102</div>
+          <div class="emergency-name">Ambulance</div>
+          <div class="emergency-desc">Medical emergency services</div>
+        </div>
+        <div class="emergency-card">
+          <div class="emergency-num">1800-180-1551</div>
+          <div class="emergency-name">IMD Cyclone Warning</div>
+          <div class="emergency-desc">India Meteorological Department</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========= FOOTER ========= -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <span class="brand-icon">🛡️</span>
+          <span class="footer-brand-name">DisasterLens India</span>
+          <p>Empowering communities with disaster intelligence and resilience knowledge.</p>
+        </div>
+        <div class="footer-links">
+          <h4>Quick Links</h4>
+          <ul>
+            <li><a href="#dashboard">Dashboard</a></li>
+            <li><a href="#analysis">State Analysis</a></li>
+            <li><a href="#map-section">India Map</a></li>
+            <li><a href="#tips-section">Safety Tips</a></li>
+          </ul>
+        </div>
+        <div class="footer-links">
+          <h4>Resources</h4>
+          <ul>
+            <li><a href="https://ndma.gov.in" target="_blank">NDMA India</a></li>
+            <li><a href="https://ndrf.gov.in" target="_blank">NDRF</a></li>
+            <li><a href="https://imd.gov.in" target="_blank">IMD Weather</a></li>
+            <li><a href="https://nidm.gov.in" target="_blank">NIDM</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2024 DisasterLens India · Static website · Data sourced from public records</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Toast notification -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script>
+  window.DISASTER_DATA=[
+    {"state":"Andhra Pradesh","disaster":"Flood","year":2010,"deaths":120,"affected":250000},
+    {"state":"Andhra Pradesh","disaster":"Cyclone","year":2013,"deaths":45,"affected":180000},
+    {"state":"Andhra Pradesh","disaster":"Drought","year":2015,"deaths":30,"affected":300000},
+    {"state":"Andhra Pradesh","disaster":"Flood","year":2016,"deaths":90,"affected":200000},
+    {"state":"Andhra Pradesh","disaster":"Cyclone","year":2018,"deaths":60,"affected":150000},
+    {"state":"Andhra Pradesh","disaster":"Flood","year":2019,"deaths":150,"affected":350000},
+    {"state":"Andhra Pradesh","disaster":"Heatwave","year":2021,"deaths":40,"affected":100000},
+    {"state":"Andhra Pradesh","disaster":"Flood","year":2022,"deaths":70,"affected":220000},
+    {"state":"Andhra Pradesh","disaster":"Cyclone","year":2023,"deaths":55,"affected":190000},
+    {"state":"Arunachal Pradesh","disaster":"Flood","year":2012,"deaths":20,"affected":50000},
+    {"state":"Arunachal Pradesh","disaster":"Landslide","year":2014,"deaths":15,"affected":30000},
+    {"state":"Arunachal Pradesh","disaster":"Earthquake","year":2017,"deaths":10,"affected":20000},
+    {"state":"Arunachal Pradesh","disaster":"Flood","year":2020,"deaths":25,"affected":60000},
+    {"state":"Arunachal Pradesh","disaster":"Landslide","year":2022,"deaths":18,"affected":35000},
+    {"state":"Assam","disaster":"Flood","year":2010,"deaths":200,"affected":400000},
+    {"state":"Assam","disaster":"Flood","year":2012,"deaths":180,"affected":380000},
+    {"state":"Assam","disaster":"Erosion","year":2014,"deaths":50,"affected":120000},
+    {"state":"Assam","disaster":"Flood","year":2016,"deaths":220,"affected":500000},
+    {"state":"Assam","disaster":"Flood","year":2017,"deaths":160,"affected":350000},
+    {"state":"Assam","disaster":"Earthquake","year":2019,"deaths":30,"affected":80000},
+    {"state":"Assam","disaster":"Flood","year":2020,"deaths":250,"affected":600000},
+    {"state":"Assam","disaster":"Flood","year":2022,"deaths":190,"affected":420000},
+    {"state":"Assam","disaster":"Flood","year":2023,"deaths":140,"affected":310000},
+    {"state":"Bihar","disaster":"Flood","year":2010,"deaths":300,"affected":700000},
+    {"state":"Bihar","disaster":"Drought","year":2011,"deaths":80,"affected":400000},
+    {"state":"Bihar","disaster":"Flood","year":2013,"deaths":280,"affected":650000},
+    {"state":"Bihar","disaster":"Flood","year":2015,"deaths":320,"affected":750000},
+    {"state":"Bihar","disaster":"Heatwave","year":2016,"deaths":100,"affected":200000},
+    {"state":"Bihar","disaster":"Flood","year":2017,"deaths":350,"affected":800000},
+    {"state":"Bihar","disaster":"Flood","year":2019,"deaths":290,"affected":670000},
+    {"state":"Bihar","disaster":"Flood","year":2021,"deaths":260,"affected":580000},
+    {"state":"Bihar","disaster":"Flood","year":2023,"deaths":310,"affected":720000},
+    {"state":"Chhattisgarh","disaster":"Drought","year":2010,"deaths":60,"affected":200000},
+    {"state":"Chhattisgarh","disaster":"Flood","year":2012,"deaths":40,"affected":150000},
+    {"state":"Chhattisgarh","disaster":"Drought","year":2015,"deaths":70,"affected":250000},
+    {"state":"Chhattisgarh","disaster":"Flood","year":2018,"deaths":35,"affected":120000},
+    {"state":"Chhattisgarh","disaster":"Drought","year":2021,"deaths":55,"affected":220000},
+    {"state":"Goa","disaster":"Flood","year":2013,"deaths":10,"affected":25000},
+    {"state":"Goa","disaster":"Cyclone","year":2016,"deaths":8,"affected":18000},
+    {"state":"Goa","disaster":"Flood","year":2019,"deaths":12,"affected":30000},
+    {"state":"Goa","disaster":"Flood","year":2021,"deaths":9,"affected":22000},
+    {"state":"Gujarat","disaster":"Earthquake","year":2001,"deaths":20000,"affected":600000},
+    {"state":"Gujarat","disaster":"Flood","year":2005,"deaths":100,"affected":200000},
+    {"state":"Gujarat","disaster":"Drought","year":2009,"deaths":40,"affected":300000},
+    {"state":"Gujarat","disaster":"Flood","year":2012,"deaths":80,"affected":180000},
+    {"state":"Gujarat","disaster":"Cyclone","year":2015,"deaths":60,"affected":150000},
+    {"state":"Gujarat","disaster":"Flood","year":2017,"deaths":120,"affected":280000},
+    {"state":"Gujarat","disaster":"Cyclone","year":2019,"deaths":90,"affected":200000},
+    {"state":"Gujarat","disaster":"Cyclone","year":2021,"deaths":70,"affected":160000},
+    {"state":"Gujarat","disaster":"Flood","year":2023,"deaths":85,"affected":190000},
+    {"state":"Haryana","disaster":"Flood","year":2010,"deaths":50,"affected":150000},
+    {"state":"Haryana","disaster":"Heatwave","year":2013,"deaths":80,"affected":200000},
+    {"state":"Haryana","disaster":"Drought","year":2016,"deaths":30,"affected":180000},
+    {"state":"Haryana","disaster":"Flood","year":2019,"deaths":45,"affected":130000},
+    {"state":"Haryana","disaster":"Heatwave","year":2022,"deaths":70,"affected":220000},
+    {"state":"Himachal Pradesh","disaster":"Flood","year":2010,"deaths":60,"affected":80000},
+    {"state":"Himachal Pradesh","disaster":"Landslide","year":2012,"deaths":40,"affected":50000},
+    {"state":"Himachal Pradesh","disaster":"Snowstorm","year":2014,"deaths":25,"affected":30000},
+    {"state":"Himachal Pradesh","disaster":"Flood","year":2017,"deaths":70,"affected":90000},
+    {"state":"Himachal Pradesh","disaster":"Landslide","year":2019,"deaths":35,"affected":45000},
+    {"state":"Himachal Pradesh","disaster":"Flood","year":2021,"deaths":55,"affected":75000},
+    {"state":"Himachal Pradesh","disaster":"Landslide","year":2023,"deaths":50,"affected":65000},
+    {"state":"Jharkhand","disaster":"Drought","year":2010,"deaths":50,"affected":300000},
+    {"state":"Jharkhand","disaster":"Flood","year":2012,"deaths":30,"affected":100000},
+    {"state":"Jharkhand","disaster":"Drought","year":2015,"deaths":60,"affected":350000},
+    {"state":"Jharkhand","disaster":"Heatwave","year":2018,"deaths":80,"affected":200000},
+    {"state":"Jharkhand","disaster":"Drought","year":2021,"deaths":45,"affected":280000},
+    {"state":"Karnataka","disaster":"Drought","year":2010,"deaths":40,"affected":400000},
+    {"state":"Karnataka","disaster":"Flood","year":2012,"deaths":70,"affected":200000},
+    {"state":"Karnataka","disaster":"Drought","year":2015,"deaths":55,"affected":500000},
+    {"state":"Karnataka","disaster":"Flood","year":2017,"deaths":90,"affected":250000},
+    {"state":"Karnataka","disaster":"Drought","year":2018,"deaths":60,"affected":450000},
+    {"state":"Karnataka","disaster":"Flood","year":2019,"deaths":120,"affected":350000},
+    {"state":"Karnataka","disaster":"Flood","year":2021,"deaths":100,"affected":300000},
+    {"state":"Karnataka","disaster":"Drought","year":2022,"deaths":45,"affected":380000},
+    {"state":"Kerala","disaster":"Flood","year":2010,"deaths":80,"affected":200000},
+    {"state":"Kerala","disaster":"Landslide","year":2013,"deaths":50,"affected":80000},
+    {"state":"Kerala","disaster":"Flood","year":2018,"deaths":483,"affected":1500000},
+    {"state":"Kerala","disaster":"Landslide","year":2019,"deaths":80,"affected":200000},
+    {"state":"Kerala","disaster":"Flood","year":2020,"deaths":100,"affected":300000},
+    {"state":"Kerala","disaster":"Landslide","year":2021,"deaths":70,"affected":150000},
+    {"state":"Kerala","disaster":"Flood","year":2022,"deaths":90,"affected":250000},
+    {"state":"Kerala","disaster":"Flood","year":2023,"deaths":60,"affected":180000},
+    {"state":"Madhya Pradesh","disaster":"Drought","year":2010,"deaths":80,"affected":600000},
+    {"state":"Madhya Pradesh","disaster":"Flood","year":2011,"deaths":50,"affected":200000},
+    {"state":"Madhya Pradesh","disaster":"Drought","year":2013,"deaths":90,"affected":700000},
+    {"state":"Madhya Pradesh","disaster":"Heatwave","year":2015,"deaths":150,"affected":300000},
+    {"state":"Madhya Pradesh","disaster":"Flood","year":2016,"deaths":60,"affected":180000},
+    {"state":"Madhya Pradesh","disaster":"Drought","year":2018,"deaths":70,"affected":650000},
+    {"state":"Madhya Pradesh","disaster":"Flood","year":2020,"deaths":45,"affected":150000},
+    {"state":"Madhya Pradesh","disaster":"Heatwave","year":2022,"deaths":120,"affected":280000},
+    {"state":"Maharashtra","disaster":"Drought","year":2010,"deaths":100,"affected":800000},
+    {"state":"Maharashtra","disaster":"Flood","year":2011,"deaths":80,"affected":300000},
+    {"state":"Maharashtra","disaster":"Drought","year":2013,"deaths":120,"affected":1000000},
+    {"state":"Maharashtra","disaster":"Flood","year":2015,"deaths":70,"affected":250000},
+    {"state":"Maharashtra","disaster":"Drought","year":2016,"deaths":110,"affected":900000},
+    {"state":"Maharashtra","disaster":"Flood","year":2019,"deaths":250,"affected":500000},
+    {"state":"Maharashtra","disaster":"Cyclone","year":2020,"deaths":60,"affected":200000},
+    {"state":"Maharashtra","disaster":"Flood","year":2021,"deaths":180,"affected":400000},
+    {"state":"Maharashtra","disaster":"Flood","year":2023,"deaths":140,"affected":350000},
+    {"state":"Manipur","disaster":"Flood","year":2011,"deaths":20,"affected":60000},
+    {"state":"Manipur","disaster":"Landslide","year":2014,"deaths":15,"affected":30000},
+    {"state":"Manipur","disaster":"Flood","year":2017,"deaths":25,"affected":70000},
+    {"state":"Manipur","disaster":"Earthquake","year":2020,"deaths":10,"affected":20000},
+    {"state":"Meghalaya","disaster":"Flood","year":2010,"deaths":20,"affected":50000},
+    {"state":"Meghalaya","disaster":"Landslide","year":2012,"deaths":18,"affected":35000},
+    {"state":"Meghalaya","disaster":"Flood","year":2015,"deaths":25,"affected":60000},
+    {"state":"Meghalaya","disaster":"Landslide","year":2019,"deaths":20,"affected":40000},
+    {"state":"Mizoram","disaster":"Landslide","year":2010,"deaths":12,"affected":25000},
+    {"state":"Mizoram","disaster":"Flood","year":2013,"deaths":10,"affected":20000},
+    {"state":"Mizoram","disaster":"Landslide","year":2017,"deaths":15,"affected":30000},
+    {"state":"Nagaland","disaster":"Landslide","year":2011,"deaths":10,"affected":20000},
+    {"state":"Nagaland","disaster":"Flood","year":2014,"deaths":8,"affected":15000},
+    {"state":"Nagaland","disaster":"Landslide","year":2018,"deaths":12,"affected":25000},
+    {"state":"Odisha","disaster":"Cyclone","year":2010,"deaths":80,"affected":300000},
+    {"state":"Odisha","disaster":"Flood","year":2011,"deaths":120,"affected":350000},
+    {"state":"Odisha","disaster":"Cyclone","year":2013,"deaths":50,"affected":200000},
+    {"state":"Odisha","disaster":"Flood","year":2014,"deaths":90,"affected":280000},
+    {"state":"Odisha","disaster":"Cyclone","year":2015,"deaths":60,"affected":250000},
+    {"state":"Odisha","disaster":"Flood","year":2017,"deaths":100,"affected":320000},
+    {"state":"Odisha","disaster":"Cyclone","year":2019,"deaths":64,"affected":280000},
+    {"state":"Odisha","disaster":"Flood","year":2020,"deaths":80,"affected":250000},
+    {"state":"Odisha","disaster":"Cyclone","year":2021,"deaths":40,"affected":180000},
+    {"state":"Odisha","disaster":"Flood","year":2023,"deaths":70,"affected":220000},
+    {"state":"Punjab","disaster":"Flood","year":2010,"deaths":60,"affected":200000},
+    {"state":"Punjab","disaster":"Heatwave","year":2013,"deaths":90,"affected":300000},
+    {"state":"Punjab","disaster":"Flood","year":2016,"deaths":50,"affected":180000},
+    {"state":"Punjab","disaster":"Heatwave","year":2019,"deaths":80,"affected":250000},
+    {"state":"Punjab","disaster":"Flood","year":2022,"deaths":45,"affected":150000},
+    {"state":"Rajasthan","disaster":"Drought","year":2010,"deaths":90,"affected":1000000},
+    {"state":"Rajasthan","disaster":"Heatwave","year":2012,"deaths":150,"affected":400000},
+    {"state":"Rajasthan","disaster":"Drought","year":2014,"deaths":100,"affected":1200000},
+    {"state":"Rajasthan","disaster":"Heatwave","year":2016,"deaths":180,"affected":500000},
+    {"state":"Rajasthan","disaster":"Drought","year":2018,"deaths":80,"affected":900000},
+    {"state":"Rajasthan","disaster":"Heatwave","year":2019,"deaths":160,"affected":450000},
+    {"state":"Rajasthan","disaster":"Drought","year":2021,"deaths":70,"affected":800000},
+    {"state":"Rajasthan","disaster":"Heatwave","year":2022,"deaths":140,"affected":380000},
+    {"state":"Sikkim","disaster":"Earthquake","year":2011,"deaths":60,"affected":100000},
+    {"state":"Sikkim","disaster":"Landslide","year":2013,"deaths":25,"affected":40000},
+    {"state":"Sikkim","disaster":"Flood","year":2015,"deaths":20,"affected":35000},
+    {"state":"Sikkim","disaster":"Landslide","year":2019,"deaths":15,"affected":25000},
+    {"state":"Sikkim","disaster":"Flood","year":2023,"deaths":40,"affected":80000},
+    {"state":"Tamil Nadu","disaster":"Flood","year":2010,"deaths":100,"affected":300000},
+    {"state":"Tamil Nadu","disaster":"Cyclone","year":2011,"deaths":70,"affected":200000},
+    {"state":"Tamil Nadu","disaster":"Flood","year":2015,"deaths":400,"affected":1800000},
+    {"state":"Tamil Nadu","disaster":"Cyclone","year":2017,"deaths":50,"affected":150000},
+    {"state":"Tamil Nadu","disaster":"Flood","year":2019,"deaths":80,"affected":220000},
+    {"state":"Tamil Nadu","disaster":"Cyclone","year":2021,"deaths":60,"affected":180000},
+    {"state":"Tamil Nadu","disaster":"Flood","year":2023,"deaths":90,"affected":250000},
+    {"state":"Telangana","disaster":"Flood","year":2010,"deaths":70,"affected":200000},
+    {"state":"Telangana","disaster":"Drought","year":2012,"deaths":50,"affected":350000},
+    {"state":"Telangana","disaster":"Flood","year":2016,"deaths":80,"affected":250000},
+    {"state":"Telangana","disaster":"Heatwave","year":2018,"deaths":100,"affected":300000},
+    {"state":"Telangana","disaster":"Flood","year":2020,"deaths":120,"affected":400000},
+    {"state":"Telangana","disaster":"Flood","year":2022,"deaths":90,"affected":280000},
+    {"state":"Tripura","disaster":"Flood","year":2010,"deaths":20,"affected":80000},
+    {"state":"Tripura","disaster":"Landslide","year":2013,"deaths":12,"affected":25000},
+    {"state":"Tripura","disaster":"Flood","year":2016,"deaths":25,"affected":90000},
+    {"state":"Tripura","disaster":"Flood","year":2020,"deaths":18,"affected":65000},
+    {"state":"Uttar Pradesh","disaster":"Flood","year":2010,"deaths":300,"affected":800000},
+    {"state":"Uttar Pradesh","disaster":"Heatwave","year":2012,"deaths":200,"affected":500000},
+    {"state":"Uttar Pradesh","disaster":"Flood","year":2013,"deaths":280,"affected":750000},
+    {"state":"Uttar Pradesh","disaster":"Heatwave","year":2015,"deaths":250,"affected":600000},
+    {"state":"Uttar Pradesh","disaster":"Flood","year":2017,"deaths":350,"affected":900000},
+    {"state":"Uttar Pradesh","disaster":"Heatwave","year":2019,"deaths":220,"affected":550000},
+    {"state":"Uttar Pradesh","disaster":"Flood","year":2021,"deaths":300,"affected":700000},
+    {"state":"Uttar Pradesh","disaster":"Heatwave","year":2022,"deaths":190,"affected":480000},
+    {"state":"Uttar Pradesh","disaster":"Flood","year":2023,"deaths":260,"affected":650000},
+    {"state":"Uttarakhand","disaster":"Flood","year":2010,"deaths":50,"affected":100000},
+    {"state":"Uttarakhand","disaster":"Landslide","year":2012,"deaths":40,"affected":80000},
+    {"state":"Uttarakhand","disaster":"Flood","year":2013,"deaths":5748,"affected":400000},
+    {"state":"Uttarakhand","disaster":"Landslide","year":2016,"deaths":30,"affected":60000},
+    {"state":"Uttarakhand","disaster":"Flood","year":2018,"deaths":80,"affected":150000},
+    {"state":"Uttarakhand","disaster":"Landslide","year":2020,"deaths":25,"affected":50000},
+    {"state":"Uttarakhand","disaster":"Flood","year":2021,"deaths":60,"affected":120000},
+    {"state":"Uttarakhand","disaster":"Landslide","year":2023,"deaths":45,"affected":90000},
+    {"state":"West Bengal","disaster":"Flood","year":2010,"deaths":150,"affected":400000},
+    {"state":"West Bengal","disaster":"Cyclone","year":2009,"deaths":150,"affected":500000},
+    {"state":"West Bengal","disaster":"Flood","year":2012,"deaths":120,"affected":350000},
+    {"state":"West Bengal","disaster":"Cyclone","year":2013,"deaths":80,"affected":300000},
+    {"state":"West Bengal","disaster":"Flood","year":2015,"deaths":100,"affected":280000},
+    {"state":"West Bengal","disaster":"Cyclone","year":2017,"deaths":90,"affected":250000},
+    {"state":"West Bengal","disaster":"Flood","year":2019,"deaths":130,"affected":380000},
+    {"state":"West Bengal","disaster":"Cyclone","year":2020,"deaths":86,"affected":2700000},
+    {"state":"West Bengal","disaster":"Flood","year":2021,"deaths":110,"affected":300000},
+    {"state":"West Bengal","disaster":"Cyclone","year":2023,"deaths":70,"affected":200000},
+    {"state":"Jammu and Kashmir","disaster":"Flood","year":2010,"deaths":80,"affected":150000},
+    {"state":"Jammu and Kashmir","disaster":"Earthquake","year":2011,"deaths":20,"affected":40000},
+    {"state":"Jammu and Kashmir","disaster":"Flood","year":2014,"deaths":300,"affected":500000},
+    {"state":"Jammu and Kashmir","disaster":"Snowstorm","year":2017,"deaths":40,"affected":80000},
+    {"state":"Jammu and Kashmir","disaster":"Flood","year":2019,"deaths":90,"affected":200000},
+    {"state":"Jammu and Kashmir","disaster":"Snowstorm","year":2021,"deaths":30,"affected":60000},
+    {"state":"Jammu and Kashmir","disaster":"Flood","year":2023,"deaths":60,"affected":130000},
+    {"state":"Delhi","disaster":"Flood","year":2010,"deaths":40,"affected":100000},
+    {"state":"Delhi","disaster":"Heatwave","year":2014,"deaths":90,"affected":200000},
+    {"state":"Delhi","disaster":"Flood","year":2018,"deaths":20,"affected":50000},
+    {"state":"Delhi","disaster":"Heatwave","year":2020,"deaths":80,"affected":180000},
+    {"state":"Delhi","disaster":"Flood","year":2023,"deaths":30,"affected":80000}
+  ];
+  </script>
+  <script src="script.js"></script>
+</body>
+</html>
